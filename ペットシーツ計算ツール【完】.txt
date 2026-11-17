@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ペットシーツ計算ツール</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* タイトル */
+h1 {
+  font-size: 1.3em;
+  margin-bottom: 10px;
+}
+
+/* 見出し */
+h2 {
+  margin-top: 24px;
+  font-size: 1.15em;
+}
+
+/* 入力行 */
+label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+
+/* グレーと白 */
+.row-gray {
+  background: #f7f7f7;
+}
+.row-white {
+  background: #ffffff;
+}
+
+/* ラベル幅揃え */
+label span {
+  width: 120px;
+}
+
+/* 入力欄 */
+label input {
+  width: 120px;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+/* ボタン */
+button {
+  margin-top: 15px;
+  padding: 10px;
+  width: 48%;
+}
+.button-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* 結果表示 */
+.result {
+  margin-top: 25px;
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* 注意書き */
+.note {
+  font-size: 0.85em;
+  color: #444;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>ペットシーツ計算ツール</h1>
+
+<h2>製品①</h2>
+<label class="row-gray"><span>内容量（枚）</span><input type="number" id="sheet1" /></label>
+<label class="row-white"><span>横(cm)</span><input type="number" step="0.1" id="w1" /></label>
+<label class="row-gray"><span>縦(cm)</span><input type="number" step="0.1" id="h1" /></label>
+<label class="row-white"><span>価格(円)</span><input type="number" id="price1" /></label>
+
+<p class="note">
+※送料を含む価格を入力してください。<br>
+※値引きクーポンやポイント等はあらかじめ差し引いた金額を入力してください。
+</p>
+
+<h2>製品②</h2>
+<label class="row-gray"><span>内容量（枚）</span><input type="number" id="sheet2" /></label>
+<label class="row-white"><span>横(cm)</span><input type="number" step="0.1" id="w2" /></label>
+<label class="row-gray"><span>縦(cm)</span><input type="number" step="0.1" id="h2" /></label>
+<label class="row-white"><span>価格(円)</span><input type="number" id="price2" /></label>
+
+<div class="button-container">
+  <button onclick="calc()">結果を表示</button>
+  <button onclick="saveData()">保存する</button>
+</div>
+
+<div class="result" id="result"></div>
+
+<p class="note">
+本ツールはあくまで目安です。小数点第2位以下は切り捨てています。<br>
+※吸水性などは考慮しておりませんのでご了承ください。
+</p>
+
+<script>
+// 保存データ復元
+window.onload = function () {
+  const saved = localStorage.getItem('petSheetCalcData');
+  if (!saved) return;
+
+  const data = JSON.parse(saved);
+  const ids = [
+    'sheet1','w1','h1','price1',
+    'sheet2','w2','h2','price2'
+  ];
+
+  ids.forEach(id => {
+    if (data[id] !== undefined) {
+      document.getElementById(id).value = data[id];
+    }
+  });
+
+  if (data.resultHTML) {
+    document.getElementById('result').innerHTML = data.resultHTML;
+  }
+};
+
+function calc() {
+  const sheet1 = Number(document.getElementById('sheet1').value);
+  const w1 = Number(document.getElementById('w1').value);
+  const h1 = Number(document.getElementById('h1').value);
+  const price1 = Number(document.getElementById('price1').value);
+
+  const sheet2 = Number(document.getElementById('sheet2').value);
+  const w2 = Number(document.getElementById('w2').value);
+  const h2 = Number(document.getElementById('h2').value);
+  const price2 = Number(document.getElementById('price2').value);
+
+  if (!sheet1 || !w1 || !h1 || !price1 ||
+      !sheet2 || !w2 || !h2 || !price2) {
+    document.getElementById('result').innerHTML =
+      '全ての項目を入力してください。';
+    return;
+  }
+
+  const area1 = Math.floor(w1 * h1);
+  const area2 = Math.floor(w2 * h2);
+
+  const totalArea1 = Math.floor(sheet1 * area1);
+  const totalArea2 = Math.floor(sheet2 * area2);
+
+  const perYen1 = Math.floor(totalArea1 / price1);
+  const perYen2 = Math.floor(totalArea2 / price2);
+
+  let better;
+  if (perYen1 > perYen2) better = '製品①の方がコスパが良いです。';
+  else if (perYen2 > perYen1) better = '製品②の方がコスパが良いです。';
+  else better = 'どちらも同じコスパです。';
+
+  const html = `
+    総面積①: ${totalArea1} cm²<br>
+    総面積②: ${totalArea2} cm²<br>
+    1円あたり①: ${perYen1} cm²/円<br>
+    1円あたり②: ${perYen2} cm²/円<br>
+    ${better}<br><br>
+    <span style="font-size:0.85em;color:#444;">
+      ※すべての数値は小数点以下を切り捨てています。
+    </span>
+  `;
+
+  document.getElementById('result').innerHTML = html;
+}
+
+function saveData() {
+  const ids = [
+    'sheet1','w1','h1','price1',
+    'sheet2','w2','h2','price2'
+  ];
+
+  const data = {};
+  ids.forEach(id => (data[id] = document.getElementById(id).value));
+  data.resultHTML = document.getElementById('result').innerHTML;
+
+  localStorage.setItem('petSheetCalcData', JSON.stringify(data));
+  alert('データを保存しました。');
+}
+</script>
+
+</body>
+</html>
